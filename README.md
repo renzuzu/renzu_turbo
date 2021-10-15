@@ -7,5 +7,7 @@ Change Vehicle Turbo system
 - start renzu_turbo
 - Usage: 
 - /giveitem turbostreet 1
+- /giveitem turbosports 1
+- /giveitem turboracing 1
 
 # default config only mechanic
