@@ -1,11 +1,13 @@
-# enginesound
-Change Vehicle Engine Sound and Sync to all server One Sync/One Sync Infinity (included carsound pack from gta5mods)
+# turbo system
+Change Vehicle Turbo system
 
 - Installation:
-- Drag enginesound to your resource folder and start at server.cfg
-- start enginesound
+- Drag renzu_turbo to your resource folder and start at server.cfg
+- import sql
+- start renzu_turbo
 - Usage: 
-- /changesound k20a
-- /changesound elegy
-- /changesound toysupmk4
-- /changesound blista
+- /giveitem turbostreet 1
+- /giveitem turbosports 1
+- /giveitem turboracing 1
+
+# default config only mechanic
