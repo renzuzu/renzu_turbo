@@ -30,23 +30,7 @@ Citizen.CreateThread(function()
 				while customturbo[plate] ~= nil and customturbo[plate] ~= 'Default' do
 					turbo = Config.turbos[customturbo[plate]]
 					customturbo[plate] = veh.turbo
-					if sound and not IsControlPressed(1, 32) or IsControlPressed(1, 32) and rpm > 0.8 and oldgear ~= gear then
-						StopSound(soundofnitro)
-						ReleaseSoundId(soundofnitro)
-						sound = false
-						local table = {
-							['file'] = customturbo[plate],
-							['volume'] = maxvol * (boost / turbo.Power),
-							['coord'] = GetEntityCoords(PlayerPedId())
-						}
-						if GetVehicleTurboPressure(vehicle) >= turbo.Power and cd >= 1000 then
-							TriggerServerEvent('renzu_turbo:soundsync',table)
-							cd = 0
-						end
-						boost = 0
-						oldgear = gear
-					end
-					if IsControlPressed(0, 32) then
+					while IsControlPressed(0, 32) do
 						if turbo.Torque > boost then
 							boost = boost + 0.01
 						end
@@ -65,18 +49,50 @@ Citizen.CreateThread(function()
 							soundofnitro = PlaySoundFromEntity(GetSoundId(), "Flare", vehicle , "DLC_HEISTS_BIOLAB_FINALE_SOUNDS", 0, 0)
 							sound = true
 						end
-					else
-						boost = 0
-						vehicle = GetVehiclePedIsIn(PlayerPedId())
-						if customturbo[plate] == 'Default' then
-							break
+						if sound and not IsControlPressed(1, 32) or IsControlPressed(1, 32) and rpm > 0.8 and oldgear ~= gear then
+							StopSound(soundofnitro)
+							ReleaseSoundId(soundofnitro)
+							sound = false
+							local table = {
+								['file'] = customturbo[plate],
+								['volume'] = maxvol * (boost / turbo.Power),
+								['coord'] = GetEntityCoords(PlayerPedId())
+							}
+							if GetVehicleTurboPressure(vehicle) >= turbo.Power and cd >= 1000 then
+								TriggerServerEvent('renzu_turbo:soundsync',table)
+								cd = 0
+							end
+							boost = 0
+							oldgear = gear
 						end
-						turbo = Config.turbos[customturbo[plate]]
-						if vehicle == 0 then
-							break
-						end
-						Wait(500)
+						Wait(1)
 					end
+					if sound and not IsControlPressed(1, 32) or IsControlPressed(1, 32) and rpm > 0.8 and oldgear ~= gear then
+						StopSound(soundofnitro)
+						ReleaseSoundId(soundofnitro)
+						sound = false
+						local table = {
+							['file'] = customturbo[plate],
+							['volume'] = maxvol * (boost / turbo.Power),
+							['coord'] = GetEntityCoords(PlayerPedId())
+						}
+						if GetVehicleTurboPressure(vehicle) >= turbo.Power and cd >= 1000 then
+							TriggerServerEvent('renzu_turbo:soundsync',table)
+							cd = 0
+						end
+						boost = 0
+						oldgear = gear
+					end
+					boost = 0
+					vehicle = GetVehiclePedIsIn(PlayerPedId())
+					if customturbo[plate] == 'Default' then
+						break
+					end
+					turbo = Config.turbos[customturbo[plate]]
+					if vehicle == 0 then
+						break
+					end
+					Wait(500)
 					Wait(7)
 					customized = true
 				end
