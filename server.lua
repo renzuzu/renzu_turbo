@@ -6,15 +6,17 @@ turbos = {}
 
 RegisterCommand("changeturbo", function(source, args, rawCommand)
   local source = source
+  local xPlayer = ESX.GetPlayerFromId(source)
   local veh = GetVehiclePedIsIn(GetPlayerPed(source),false)
   print(veh,GetPlayerPed(source))
-  if args[1] ~= nil and veh ~= 0 then
+  if xPlayer.getGroup() ~= 'user' and Config.turbos[args[1]] and args[1] ~= nil and veh ~= 0 then
       plate = GetVehicleNumberPlateText(veh)
       if turbos[plate] == nil then
         turbos[plate] = {}
       end
       turbos[plate].turbo = args[1]
       turbos[plate].plate = plate
+      SaveTurbo(plate,args[1])
   end
 end, false)
 
@@ -22,7 +24,7 @@ Citizen.CreateThread(function()
   local ret = SqlFunc(Config.Mysql,'fetchAll','SELECT * FROM renzu_turbo', {})
   for k,v in pairs(ret) do
     turbos[v.plate] = v
-    turbos[v.plate].engine = v.turbo
+    turbos[v.plate].turbo = v.turbo
     turbos[v.plate].current = v.turbo
   end
 
@@ -32,6 +34,7 @@ Citizen.CreateThread(function()
       if turbos[plate] and plate == turbos[plate].plate then
         local ent = Entity(v).state
         ent.turbo = turbos[plate].turbo
+        ent.turbopower = Config.turbos[ent.turbo].Power
       end
     end
     Wait(5000)

@@ -26,6 +26,7 @@ Citizen.CreateThread(function()
 				local rpm = GetVehicleCurrentRpm(vehicle)
 				local gear = GetVehicleCurrentGear(vehicle)
 				local maxvol = 0.4
+				local ent = Entity(vehicle).state
 				while customturbo[plate] ~= nil and customturbo[plate] ~= 'Default' do
 					turbo = Config.turbos[customturbo[plate]]
 					customturbo[plate] = veh.turbo
@@ -54,7 +55,11 @@ Citizen.CreateThread(function()
 						gear = GetVehicleCurrentGear(vehicle)
 						SetVehicleTurboPressure(vehicle , boost + turbo.Power * rpm)
 						if GetVehicleTurboPressure(vehicle) >= turbo.Power then
-							SetVehicleCheatPowerIncrease(vehicle,turbo.Power * GetVehicleTurboPressure(vehicle))
+							local power = turbo.Power
+							if ent.nitroenable then
+								power = power + ent.nitropower
+							end
+							SetVehicleCheatPowerIncrease(vehicle,power * GetVehicleTurboPressure(vehicle))
 						end
 						if not sound then
 							soundofnitro = PlaySoundFromEntity(GetSoundId(), "Flare", vehicle , "DLC_HEISTS_BIOLAB_FINALE_SOUNDS", 0, 0)
