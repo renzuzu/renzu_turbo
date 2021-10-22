@@ -16,6 +16,9 @@ RegisterCommand("changeturbo", function(source, args, rawCommand)
       end
       turbos[plate].turbo = args[1]
       turbos[plate].plate = plate
+      local ent = Entity(veh).state
+      ent.turbo = turbos[plate].turbo
+      ent.turbopower = Config.turbos[ent.turbo].Power
       SaveTurbo(plate,args[1])
   end
 end, false)
@@ -28,16 +31,13 @@ Citizen.CreateThread(function()
     turbos[v.plate].current = v.turbo
   end
 
-  while true do
-    for k,v in ipairs(GetAllVehicles()) do
-      local plate = GetVehicleNumberPlateText(v)
-      if turbos[plate] and plate == turbos[plate].plate then
-        local ent = Entity(v).state
-        ent.turbo = turbos[plate].turbo
-        ent.turbopower = Config.turbos[ent.turbo].Power
-      end
+  for k,v in ipairs(GetAllVehicles()) do
+    local plate = GetVehicleNumberPlateText(v)
+    if turbos[plate] and plate == turbos[plate].plate then
+      local ent = Entity(v).state
+      ent.turbo = turbos[plate].turbo
+      ent.turbopower = Config.turbos[ent.turbo].Power
     end
-    Wait(5000)
   end
 end)
 
@@ -140,6 +140,9 @@ Citizen.CreateThread(function()
         turbos[plate].current = turbos[plate].turbo or v
         turbos[plate].turbo = v
         turbos[plate].plate = plate
+        local ent = Entity(veh).state
+        ent.turbo = turbos[plate].turbo
+        ent.turbopower = Config.turbos[ent.turbo].Power
         SaveTurbo(plate,v)
       end
     end)
@@ -150,4 +153,17 @@ end)
 RegisterNetEvent('renzu_turbo:soundsync')
 AddEventHandler('renzu_turbo:soundsync', function(table)
     TriggerClientEvent('renzu_turbo:soundsync',-1,table)
+end)
+
+AddEventHandler('entityCreated', function(entity)
+  local entity = entity
+  if GetEntityPopulationType(entity) == 7 and DoesEntityExist(entity) then
+    Wait(4000)
+    local plate = GetVehicleNumberPlateText(entity)
+    if turbos[plate] and turbos[plate].turbo then
+      local ent = Entity(entity).state
+      ent.turbo = turbos[plate].turbo
+      ent.turbopower = Config.turbos[ent.turbo].Power
+    end
+  end
 end)
