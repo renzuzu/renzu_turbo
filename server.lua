@@ -42,8 +42,8 @@ Citizen.CreateThread(function()
 end)
 
 function SaveTurbo(plate,turbo)
-    local plate = string.gsub(plate, '^%s*(.-)%s*$', '%1')
-    local result = SqlFunc(Config.Mysql,'fetchAll','SELECT * FROM renzu_turbo WHERE TRIM(plate) = @plate', {['@plate'] = plate})
+    local plate_ = string.gsub(plate, '^%s*(.-)%s*$', '%1')
+    local result = SqlFunc(Config.Mysql,'fetchAll','SELECT * FROM renzu_turbo WHERE TRIM(plate) = @plate', {['@plate'] = plate_})
     if result[1] == nil then
         SqlFunc(Config.Mysql,'execute','INSERT INTO renzu_turbo (plate, turbo) VALUES (@plate, @turbo)', {
             ['@plate']   = plate,
@@ -51,7 +51,7 @@ function SaveTurbo(plate,turbo)
         })
     elseif result[1] then
         SqlFunc(Config.Mysql,'execute','UPDATE renzu_turbo SET turbo = @turbo WHERE TRIM(plate) = @plate', {
-            ['@plate'] = plate,
+            ['@plate'] = plate_,
             ['@turbo'] = turbo,
         })
     end
