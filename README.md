@@ -1,6 +1,14 @@
 # turbo system
 Change Vehicle Turbo system
 
+# Feat
+- Custom BOV Sounds for each Turbo variants
+- Custom Power for ea Turbo Variants
+- Power Multiplication Sync with renzu_nitro
+- Item Supported
+- Job Supported
+
+
 - Installation:
 - Drag renzu_turbo to your resource folder and start at server.cfg
 - import sql
@@ -11,3 +19,6 @@ Change Vehicle Turbo system
 - /giveitem turboracing 1
 
 # default config only mechanic
+
+# dependency 
+- ESX
