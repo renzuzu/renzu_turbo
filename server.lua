@@ -158,9 +158,8 @@ end)
 
 AddEventHandler('entityCreated', function(entity)
   local entity = entity
-  Wait(500)
+  Wait(4000)
   if DoesEntityExist(entity) and GetEntityPopulationType(entity) == 7 and GetEntityType(entity) == 2 then
-    Wait(4000)
     local plate = GetVehicleNumberPlateText(entity)
     if turbos[plate] and turbos[plate].turbo then
       local ent = Entity(entity).state
