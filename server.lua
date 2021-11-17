@@ -1,12 +1,21 @@
 
 
 ESX = nil
-TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
+QBCore = nil
+vehicletable = 'owned_vehicles'
+vehiclemod = 'vehicle'
+owner = 'owner'
+stored = 'stored'
+garage_id = 'garage_id'
+type_ = 'type'
+RegisterServerCallBack_ = nil
+RegisterUsableItem = nil
+Initialized()
 turbos = {}
 
 RegisterCommand("changeturbo", function(source, args, rawCommand)
   local source = source
-  local xPlayer = ESX.GetPlayerFromId(source)
+  local xPlayer = GetPlayerFromId(source)
   local veh = GetVehiclePedIsIn(GetPlayerPed(source),false)
   print(veh,GetPlayerPed(source))
   if xPlayer.getGroup() ~= 'user' and Config.turbos[args[1]] and args[1] ~= nil and veh ~= 0 then
@@ -127,8 +136,8 @@ Citizen.CreateThread(function()
   for v, k in pairs(Config.turbos) do
     local turboname = string.lower(v)
     print("register item", v)
-    ESX.RegisterUsableItem("turbo"..turboname.."", function(source)
-      local xPlayer = ESX.GetPlayerFromId(source)
+    RegisterUsableItem("turbo"..turboname.."", function(source)
+      local xPlayer = GetPlayerFromId(source)
       if Config.jobonly and xPlayer.job.name ~= tostring(Config.turbojob) then print("not mech") return end
       xPlayer.removeInventoryItem("turbo"..turboname.."", 1)
       local veh = GetVehiclePedIsIn(GetPlayerPed(source),false)

@@ -1,5 +1,5 @@
 Config = {}
-
+Config.framework = 'QBCORE'
 Config.Mysql = 'mysql-async'
 Config.weight_type = false
 Config.weight = 1.5
