@@ -1,15 +1,14 @@
 Using = {}
 function Initialized()
 	if Config.framework == 'ESX' then
-		ESX = nil
-		TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
+		ESX = exports['es_extended']:getSharedObject()
 		RegisterServerCallBack_ = ESX.RegisterServerCallback
 		RegisterUsableItem = ESX.RegisterUsableItem
 		vehicletable = 'owned_vehicles'
 		vehiclemod = 'vehicle'
 		QBCore = {}
 	elseif Config.framework == 'QBCORE' then
-		QBCore = exports['qb-core']:GetSharedObject()
+		QBCore = exports['qb-core']:GetCoreObject()
 		RegisterServerCallBack_ =  QBCore.Functions.CreateCallback
 		RegisterUsableItem = QBCore.Functions.CreateUseableItem
 		vehicletable = 'player_vehicles '
