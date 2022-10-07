@@ -26,18 +26,18 @@ RegisterCommand("changeturbo", function(source, args, rawCommand)
       turbos[plate].turbo = args[1]
       turbos[plate].plate = plate
       local ent = Entity(veh).state
-      ent.turbo = turbos[plate].turbo
-      ent.turbopower = Config.turbos[ent.turbo].Power
+      ent:set('turbo',turbos[plate].turbo, true)
       SaveTurbo(plate,args[1])
   end
 end, false)
 
 Citizen.CreateThread(function()
-  local ret = SqlFunc(Config.Mysql,'fetchAll','SELECT * FROM renzu_turbo', {})
+  Wait(1000)
+  local ret = json.decode(GetResourceKvpString('renzu_turbo') or '[]') or {}
   for k,v in pairs(ret) do
-    turbos[v.plate] = v
-    turbos[v.plate].turbo = v.turbo
-    turbos[v.plate].current = v.turbo
+    if not turbos[k] then turbos[k] = {} end
+    turbos[k].plate = k
+    turbos[k].turbo = v
   end
 
   for k,v in ipairs(GetAllVehicles()) do
@@ -45,25 +45,15 @@ Citizen.CreateThread(function()
     if turbos[plate] and plate == turbos[plate].plate then
       local ent = Entity(v).state
       ent.turbo = turbos[plate].turbo
-      ent.turbopower = Config.turbos[ent.turbo].Power
+      ent:set('turbo',turbos[plate].turbo, true)
     end
   end
 end)
 
 function SaveTurbo(plate,turbo)
-    local plate_ = string.gsub(plate, '^%s*(.-)%s*$', '%1')
-    local result = SqlFunc(Config.Mysql,'fetchAll','SELECT * FROM renzu_turbo WHERE TRIM(plate) = @plate', {['@plate'] = plate_})
-    if result[1] == nil then
-        SqlFunc(Config.Mysql,'execute','INSERT INTO renzu_turbo (plate, turbo) VALUES (@plate, @turbo)', {
-            ['@plate']   = plate,
-            ['@turbo']   = turbo,
-        })
-    elseif result[1] then
-        SqlFunc(Config.Mysql,'execute','UPDATE renzu_turbo SET turbo = @turbo WHERE TRIM(plate) = @plate', {
-            ['@plate'] = plate_,
-            ['@turbo'] = turbo,
-        })
-    end
+    local data = json.decode(GetResourceKvpString('renzu_turbo') or '[]') or {}
+    data[plate] = turbo
+    SetResourceKvp('renzu_turbo',json.encode(data))
 end
 
 function SqlFunc(plugin,type,query,var)
@@ -152,7 +142,6 @@ Citizen.CreateThread(function()
         turbos[plate].plate = plate
         local ent = Entity(veh).state
         ent.turbo = turbos[plate].turbo
-        ent.turbopower = Config.turbos[ent.turbo].Power
         SaveTurbo(plate,v)
       end
     end)
@@ -167,13 +156,11 @@ end)
 
 AddEventHandler('entityCreated', function(entity)
   local entity = entity
-  Wait(4000)
   if DoesEntityExist(entity) and GetEntityPopulationType(entity) == 7 and GetEntityType(entity) == 2 then
     local plate = GetVehicleNumberPlateText(entity)
     if turbos[plate] and turbos[plate].turbo then
       local ent = Entity(entity).state
       ent.turbo = turbos[plate].turbo
-      ent.turbopower = Config.turbos[ent.turbo].Power
     end
   end
 end)
