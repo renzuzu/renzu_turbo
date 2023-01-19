@@ -31,6 +31,33 @@ RegisterCommand("changeturbo", function(source, args, rawCommand)
   end
 end, false)
 
+GetTurboType = function(type)
+  for k,v in pairs(Config.turbos) do
+    if v.item == type then
+      return k
+    end
+  end
+  return false
+end
+
+AddTurbo = function(net,type)
+  local vehicle = NetworkGetEntityFromNetworkId(net)
+  local turbo = GetTurboType(type)
+  if not DoesEntityExist(vehicle) or not turbo then return end
+  local plate = string.gsub(GetVehicleNumberPlateText(vehicle), '^%s*(.-)%s*$', '%1'):upper()
+  if turbos[plate] == nil then
+    turbos[plate] = {}
+  end
+  turbos[plate].turbo = turbo
+  turbos[plate].plate = plate
+  local ent = Entity(vehicle).state
+  ent:set('turbo',turbos[plate].turbo, true)
+  SaveTurbo(plate,turbo)
+end
+
+exports('AddTurbo', AddTurbo)
+RegisterNetEvent('renzu_turbo:AddTurbo', AddTurbo)
+
 Citizen.CreateThread(function()
   Wait(1000)
   local ret = json.decode(GetResourceKvpString('renzu_turbo') or '[]') or {}
