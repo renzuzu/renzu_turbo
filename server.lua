@@ -25,8 +25,9 @@ RegisterCommand("changeturbo", function(source, args, rawCommand)
       end
       turbos[plate].turbo = args[1]
       turbos[plate].plate = plate
+      turbos[plate].durability = 100.0
       local ent = Entity(veh).state
-      ent:set('turbo',turbos[plate].turbo, true)
+      ent:set('turbo',turbos[plate], true)
       SaveTurbo(plate,args[1])
   end
 end, false)
@@ -50,8 +51,9 @@ AddTurbo = function(net,type)
   end
   turbos[plate].turbo = turbo
   turbos[plate].plate = plate
+  turbos[plate].durability = 100.0
   local ent = Entity(vehicle).state
-  ent:set('turbo',turbos[plate].turbo, true)
+  ent:set('turbo',turbos[plate], true)
   SaveTurbo(plate,turbo)
 end
 
@@ -64,16 +66,29 @@ Citizen.CreateThread(function()
   for k,v in pairs(ret) do
     if not turbos[k] then turbos[k] = {} end
     turbos[k].plate = k
-    turbos[k].turbo = v
+    turbos[k].turbo = v.turbo
+    turbos[k].durability = v.durability or 100.0
   end
 
   for k,v in ipairs(GetAllVehicles()) do
     local plate = GetVehicleNumberPlateText(v)
     if turbos[plate] and plate == turbos[plate].plate then
       local ent = Entity(v).state
-      ent.turbo = turbos[plate].turbo
-      ent:set('turbo',turbos[plate].turbo, true)
+      if turbos[plate].durability == nil then
+        turbos[plate].durability = 100.0
+      end
+      ent:set('turbo',turbos[plate], true)
     end
+  end
+
+  while true do
+    Wait(1111)
+    local turbodata = {}
+    for k,v in pairs(turbos) do
+      turbodata[v.plate] = v
+      --print(v.durability,v.turbo)
+    end
+    SetResourceKvp('renzu_turbo',json.encode(turbodata))
   end
 end)
 
@@ -168,7 +183,7 @@ Citizen.CreateThread(function()
         turbos[plate].turbo = v
         turbos[plate].plate = plate
         local ent = Entity(veh).state
-        ent.turbo = turbos[plate].turbo
+        ent:set('turbo',turbos[plate],true)
         SaveTurbo(plate,v)
       end
     end)
@@ -177,17 +192,30 @@ Citizen.CreateThread(function()
 end)
 
 RegisterNetEvent('renzu_turbo:soundsync')
-AddEventHandler('renzu_turbo:soundsync', function(table)
+AddEventHandler('renzu_turbo:soundsync', function(table,net,exportboost)
+    local vehicle = NetworkGetEntityFromNetworkId(net)
+    local ent = Entity(vehicle).state
+    local plate = GetVehicleNumberPlateText(vehicle)
+    local state = ent.turbo
+    if not state.durability then
+      state.durability = 100.0
+    end
+    print(state,state.durability)
+    state.durability -= (0.1) * exportboost
+    ent:set('turbo',state,true)
+    turbos[plate].durability = state.durability
     TriggerClientEvent('renzu_turbo:soundsync',-1,table)
 end)
 
 AddEventHandler('entityCreated', function(entity)
+  Wait(2000)
   local entity = entity
-  if DoesEntityExist(entity) and GetEntityPopulationType(entity) == 7 and GetEntityType(entity) == 2 then
+  if DoesEntityExist(entity) and GetEntityPopulationType(entity) >= 5 and GetEntityType(entity) == 2 then
     local plate = GetVehicleNumberPlateText(entity)
+    --print(plate,turbos[plate] , turbos[plate].turbo)
     if turbos[plate] and turbos[plate].turbo then
       local ent = Entity(entity).state
-      ent.turbo = turbos[plate].turbo
+      ent:set('turbo',turbos[plate],true)
     end
   end
 end)

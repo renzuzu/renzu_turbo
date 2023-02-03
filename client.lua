@@ -5,14 +5,14 @@ enginespec = false
 local customturbo = {}
 
 AddStateBagChangeHandler('turbo' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated)
-	-- Wait(0)
-	-- if not value then return end
+	Wait(500)
+	if not value then return end
     local net = tonumber(bagName:gsub('entity:', ''), 10)
     local vehicle = NetworkGetEntityFromNetworkId(net)
 	local ent = Entity(vehicle).state
 	local plate = GetVehicleNumberPlateText(vehicle)
 	customturbo[plate] = value
-	print('turbo', value)
+	print('turbo', value.turbo, customturbo[plate])
 	if GetPedInVehicleSeat(vehicle,-1) == PlayerPedId() then
 		StartTurboLoop(plate,vehicle)
 	end
@@ -25,20 +25,28 @@ AddEventHandler('gameEventTriggered', function (name, args)
 			local plate = GetVehicleNumberPlateText(args[2])
 			print(customturbo[plate])
 			if customturbo[plate] and DoesEntityExist(args[2]) then
-				Wait(2000)
+				Wait(3000)
 				StartTurboLoop(plate,args[2])
 			end
 		end
 	end
 end)
 
+local exportboost = 1.0
+exports('BoostPerGear', function(percent)
+	exportboost = percent
+end)
+
+local boosted = false
 StartTurboLoop = function(plate,vehicle)
+	if boosted then return end
 	if invehicle then return end
 	local vehicle = vehicle
 	if customturbo[plate] then
+		boosted = true
 		print("Turbo Loop")
 		invehicle = true
-		local turbo = Config.turbos[customturbo[plate]]
+		local turbo = Config.turbos[customturbo[plate].turbo]
 		local default = {fDriveInertia = GetVehicleHandlingFloat(vehicle , "CHandlingData","fDriveInertia"), fInitialDriveForce = GetVehicleHandlingFloat(vehicle , "CHandlingData","fInitialDriveForce")}
 		ToggleVehicleMod(vehicle,18,true)
 		local sound = false
@@ -51,8 +59,10 @@ StartTurboLoop = function(plate,vehicle)
 		local gear = GetVehicleCurrentGear(vehicle)
 		local maxvol = 0.4
 		local ent = Entity(vehicle).state
-		while customturbo[plate] ~= nil and customturbo[plate] ~= 'Default' and IsPedInAnyVehicle(PlayerPedId()) do
-			turbo = Config.turbos[customturbo[plate]]
+		while customturbo[plate] ~= nil and customturbo[plate].turbo ~= 'Default' and IsPedInAnyVehicle(PlayerPedId()) do
+			local durability = (ent.turbo?.durability or 100.0) / 100
+			turbo = Config.turbos[customturbo[plate].turbo]
+			--print('gago',durability,exportboost)
 			while IsControlPressed(0, 32) do
 				if turbo.Torque > boost then
 					boost = boost + 0.01
@@ -62,7 +72,7 @@ StartTurboLoop = function(plate,vehicle)
 				gear = GetVehicleCurrentGear(vehicle)
 				SetVehicleTurboPressure(vehicle , boost + turbo.Power * rpm)
 				if GetVehicleTurboPressure(vehicle) >= turbo.Power then
-					local power = turbo.Power
+					local power = (turbo.Power * exportboost) * durability
 					if ent.nitroenable then
 						power = power + ent.nitropower
 					end
@@ -77,12 +87,12 @@ StartTurboLoop = function(plate,vehicle)
 					ReleaseSoundId(soundofnitro)
 					sound = false
 					local table = {
-						['file'] = customturbo[plate],
+						['file'] = customturbo[plate].turbo,
 						['volume'] = maxvol * (boost / turbo.Power),
 						['coord'] = GetEntityCoords(PlayerPedId())
 					}
 					if GetVehicleTurboPressure(vehicle) >= turbo.Power and cd >= 1000 then
-						TriggerServerEvent('renzu_turbo:soundsync',table)
+						TriggerServerEvent('renzu_turbo:soundsync',table,NetworkGetNetworkIdFromEntity(vehicle),exportboost)
 						cd = 0
 					end
 					boost = 0
@@ -95,12 +105,12 @@ StartTurboLoop = function(plate,vehicle)
 				ReleaseSoundId(soundofnitro)
 				sound = false
 				local table = {
-					['file'] = customturbo[plate],
+					['file'] = customturbo[plate].turbo,
 					['volume'] = maxvol * (boost / turbo.Power),
 					['coord'] = GetEntityCoords(PlayerPedId())
 				}
 				if GetVehicleTurboPressure(vehicle) >= turbo.Power and cd >= 1000 then
-					TriggerServerEvent('renzu_turbo:soundsync',table)
+					TriggerServerEvent('renzu_turbo:soundsync',table,NetworkGetNetworkIdFromEntity(vehicle),exportboost)
 					cd = 0
 				end
 				boost = 0
@@ -108,10 +118,10 @@ StartTurboLoop = function(plate,vehicle)
 			end
 			boost = 0
 			vehicle = GetVehiclePedIsIn(PlayerPedId())
-			if customturbo[plate] == 'Default' then
+			if customturbo[plate].turbo == 'Default' then
 				break
 			end
-			turbo = Config.turbos[customturbo[plate]]
+			turbo = Config.turbos[customturbo[plate].turbo]
 			if vehicle == 0 then
 				break
 			end
@@ -120,6 +130,7 @@ StartTurboLoop = function(plate,vehicle)
 			customized = true
 		end
 		invehicle = false
+		boosted = false
 		if customized then
 			Wait(1000)
 		end
