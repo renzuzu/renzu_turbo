@@ -1,9 +1,5 @@
-local vehicle_sounds = {}
-
-vehiclehandling = {}
-enginespec = false
 local customturbo = {}
-
+local turboboost = {}
 AddStateBagChangeHandler('turbo' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated)
 	Wait(500)
 	if not value then return end
@@ -13,6 +9,12 @@ AddStateBagChangeHandler('turbo' --[[key filter]], nil --[[bag filter]], functio
 	local plate = GetVehicleNumberPlateText(vehicle)
 	customturbo[plate] = value
 	print('turbo', value.turbo, customturbo[plate])
+	local weightadded = Config.turbos[value.turbo].weight
+	local weight = GetVehicleHandlingInt(vehicle,'CHandlingData', 'fMass')
+	if turboboost[plate] ~= value.turbo then
+		turboboost[plate] = value.turbo
+		SetVehicleHandlingInt(vehicle , "CHandlingData", "fMass", tonumber(weight)*weightadded)
+	end
 	if GetPedInVehicleSeat(vehicle,-1) == PlayerPedId() then
 		StartTurboLoop(plate,vehicle)
 	end
@@ -85,6 +87,9 @@ StartTurboLoop = function(plate,vehicle)
 				if sound and not IsControlPressed(1, 32) or IsControlPressed(1, 32) and rpm > 0.8 and oldgear ~= gear then
 					StopSound(soundofnitro)
 					ReleaseSoundId(soundofnitro)
+					if customturbo[plate].turbo == 'Ultimate' then
+						SetVehicleBoostActive(vehicle,1,0)
+					end
 					sound = false
 					local table = {
 						['file'] = customturbo[plate].turbo,
