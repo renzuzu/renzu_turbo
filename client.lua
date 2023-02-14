@@ -61,26 +61,29 @@ StartTurboLoop = function(plate,vehicle)
 		local gear = GetVehicleCurrentGear(vehicle)
 		local maxvol = 0.4
 		local ent = Entity(vehicle).state
+		local maxtorque = turbo.Torque
 		while customturbo[plate] ~= nil and customturbo[plate].turbo ~= 'Default' and IsPedInAnyVehicle(PlayerPedId()) do
 			local durability = (ent.turbo?.durability or 100.0) / 100
 			turbo = Config.turbos[customturbo[plate].turbo]
-			--print('gago',durability,exportboost)
 			while IsControlPressed(0, 32) do
-				if turbo.Torque > boost then
-					boost = boost + 0.01
+				rpm = GetVehicleCurrentRpm(vehicle)
+				if boost <= maxtorque and turbo.rpmboost <= rpm then
+					local powercurve = (turbo.Power * (1 + (rpm*2)))
+					boost = maxtorque < boost and (boost + powercurve) or maxtorque
 				end
 				cd = cd + 10
-				rpm = GetVehicleCurrentRpm(vehicle)
 				gear = GetVehicleCurrentGear(vehicle)
-				SetVehicleTurboPressure(vehicle , boost + turbo.Power * rpm)
-				if GetVehicleTurboPressure(vehicle) >= turbo.Power then
-					local power = (turbo.Power * exportboost) * durability
+				SetVehicleTurboPressure(vehicle , boost)
+				if GetVehicleTurboPressure(vehicle)+0.1 >= maxtorque then
+					local power = (GetVehicleTurboPressure(vehicle) * (rpm < 0.8 and 0.5+rpm or rpm+0.2) * exportboost) * durability
 					if ent.nitroenable then
 						power = power + ent.nitropower
 					end
-					SetVehicleCheatPowerIncrease(vehicle,power * GetVehicleTurboPressure(vehicle))
+					SetVehicleCheatPowerIncrease(vehicle,power)
 				end
 				if not sound then
+					StopSound(soundofnitro)
+					ReleaseSoundId(soundofnitro)
 					soundofnitro = PlaySoundFromEntity(GetSoundId(), "Flare", vehicle , "DLC_HEISTS_BIOLAB_FINALE_SOUNDS", 0, 0)
 					sound = true
 				end
@@ -93,17 +96,17 @@ StartTurboLoop = function(plate,vehicle)
 					sound = false
 					local table = {
 						['file'] = customturbo[plate].turbo,
-						['volume'] = maxvol * (boost / turbo.Power),
+						['volume'] = maxvol * (boost / maxtorque),
 						['coord'] = GetEntityCoords(PlayerPedId())
 					}
-					if GetVehicleTurboPressure(vehicle) >= turbo.Power and cd >= 1000 then
+					if GetVehicleTurboPressure(vehicle)+0.1 >= maxtorque and cd >= 1000 then
 						TriggerServerEvent('renzu_turbo:soundsync',table,NetworkGetNetworkIdFromEntity(vehicle),exportboost)
 						cd = 0
 					end
 					boost = 0
 					oldgear = gear
 				end
-				Wait(1)
+				Wait(0)
 			end
 			if sound and not IsControlPressed(1, 32) or IsControlPressed(1, 32) and rpm > 0.8 and oldgear ~= gear then
 				StopSound(soundofnitro)
@@ -111,10 +114,10 @@ StartTurboLoop = function(plate,vehicle)
 				sound = false
 				local table = {
 					['file'] = customturbo[plate].turbo,
-					['volume'] = maxvol * (boost / turbo.Power),
+					['volume'] = maxvol * (boost / maxtorque),
 					['coord'] = GetEntityCoords(PlayerPedId())
 				}
-				if GetVehicleTurboPressure(vehicle) >= turbo.Power and cd >= 1000 then
+				if GetVehicleTurboPressure(vehicle)+0.1 >= maxtorque and cd >= 1000 then
 					TriggerServerEvent('renzu_turbo:soundsync',table,NetworkGetNetworkIdFromEntity(vehicle),exportboost)
 					cd = 0
 				end
