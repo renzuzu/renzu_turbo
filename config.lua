@@ -12,4 +12,6 @@ Config.turbos = {
 	Ultimate = {label = 'Turbo Ultimate',Power = 0.8, Torque = 3.2, value = 125000, item = 'turboultimate', weight = 1.14, rpmboost = 0.7},
 }
 
-exports('turbos', Config.turbos)
+exports('turbos', function()
+	return Config.turbos
+end)
