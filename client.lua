@@ -79,7 +79,7 @@ StartTurboLoop = function(plate,vehicle)
 					if ent.nitroenable then
 						power = power + ent.nitropower
 					end
-					SetVehicleCheatPowerIncrease(vehicle,power)
+					SetVehicleCheatPowerIncrease(vehicle,power < 1.0 and 1.0 or power)
 				end
 				if not sound then
 					StopSound(soundofnitro)
