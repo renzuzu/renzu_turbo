@@ -5,18 +5,20 @@ AddStateBagChangeHandler('turbo' --[[key filter]], nil --[[bag filter]], functio
 	if not value then return end
     local net = tonumber(bagName:gsub('entity:', ''), 10)
     local vehicle = NetworkGetEntityFromNetworkId(net)
-	local ent = Entity(vehicle).state
-	local plate = GetVehicleNumberPlateText(vehicle)
-	customturbo[plate] = value
-	print('turbo', value.turbo, customturbo[plate])
-	local weightadded = Config.turbos[value.turbo].weight
-	local weight = GetVehicleHandlingInt(vehicle,'CHandlingData', 'fMass')
-	if turboboost[plate] ~= value.turbo then
-		turboboost[plate] = value.turbo
-		SetVehicleHandlingInt(vehicle , "CHandlingData", "fMass", tonumber(weight)*weightadded)
-	end
-	if GetPedInVehicleSeat(vehicle,-1) == PlayerPedId() then
-		StartTurboLoop(plate,vehicle)
+	if DoesEntityExist(vehicle) then
+		local ent = Entity(vehicle).state
+		local plate = GetVehicleNumberPlateText(vehicle)
+		customturbo[plate] = value
+		print('turbo', value.turbo, customturbo[plate])
+		local weightadded = Config.turbos[value.turbo].weight
+		local weight = GetVehicleHandlingInt(vehicle,'CHandlingData', 'fMass')
+		if turboboost[plate] ~= value.turbo then
+			turboboost[plate] = value.turbo
+			SetVehicleHandlingInt(vehicle , "CHandlingData", "fMass", tonumber(weight)*weightadded)
+		end
+		if GetPedInVehicleSeat(vehicle,-1) == PlayerPedId() then
+			StartTurboLoop(plate,vehicle)
+		end
 	end
 end)
 
