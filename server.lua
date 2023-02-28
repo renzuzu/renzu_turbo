@@ -82,11 +82,10 @@ Citizen.CreateThread(function()
   end
 
   while true do
-    Wait(1111)
+    Wait(60000)
     local turbodata = {}
     for k,v in pairs(turbos) do
       turbodata[v.plate] = v
-      --print(v.durability,v.turbo)
     end
     SetResourceKvp('renzu_turbo',json.encode(turbodata))
   end
@@ -210,9 +209,8 @@ end)
 AddEventHandler('entityCreated', function(entity)
   Wait(2000)
   local entity = entity
-  if DoesEntityExist(entity) and GetEntityPopulationType(entity) >= 5 and GetEntityType(entity) == 2 then
+  if DoesEntityExist(entity) and GetEntityPopulationType(entity) == 7 and GetEntityType(entity) == 2 then
     local plate = GetVehicleNumberPlateText(entity)
-    --print(plate,turbos[plate] , turbos[plate].turbo)
     if turbos[plate] and turbos[plate].turbo then
       local ent = Entity(entity).state
       ent:set('turbo',turbos[plate],true)
