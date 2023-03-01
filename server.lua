@@ -137,33 +137,6 @@ function firstToUpper(str)
 end
 
 Citizen.CreateThread(function()
-  c = 0
-  for v, k in pairs(Config.turbos) do
-    c = c + 1
-    local turboname = string.lower(v)
-    local label = string.upper(v)
-    foundRow = SqlFunc(Config.Mysql,'fetchAll',"SELECT * FROM items WHERE name = @name", {
-      ['@name'] = "turbo"..turboname..""
-    })
-    if foundRow[1] == nil then
-      local weight = 'limit'
-      if Config.weight_type then
-        SqlFunc(Config.Mysql,'execute',"INSERT INTO items (name, label, weight) VALUES (@name, @label, @weight)", {
-          ['@name'] = "turbo"..turboname.."",
-          ['@label'] = ""..firstToUpper(turboname).." Turbo",
-          ['@weight'] = Config.weight
-        })
-        print("Inserting "..turboname.."")
-      else
-        SqlFunc(Config.Mysql,'execute',"INSERT INTO items (name, label) VALUES (@name, @label)", {
-          ['@name'] = "turbo"..turboname.."",
-          ['@label'] = ""..firstToUpper(turboname).." Turbo",
-        })
-        print("Inserting "..turboname.."")
-      end
-    end
-  end
-  while ESX == nil do Wait(10) end
   for v, k in pairs(Config.turbos) do
     local turboname = string.lower(v)
     print("register item", v)
