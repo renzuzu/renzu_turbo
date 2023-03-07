@@ -179,9 +179,7 @@ AddEventHandler('renzu_turbo:soundsync', function(table,net,exportboost)
     TriggerClientEvent('renzu_turbo:soundsync',-1,table)
 end)
 
-AddEventHandler('entityCreated', function(entity)
-  Wait(2000)
-  local entity = entity
+SetTurbo = function(entity)
   if DoesEntityExist(entity) and GetEntityPopulationType(entity) == 7 and GetEntityType(entity) == 2 then
     local plate = GetVehicleNumberPlateText(entity)
     if turbos[plate] and turbos[plate].turbo then
@@ -189,4 +187,22 @@ AddEventHandler('entityCreated', function(entity)
       ent:set('turbo',turbos[plate],true)
     end
   end
+end
+
+AddStateBagChangeHandler('VehicleProperties' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated)
+	Wait(0)
+	local net = tonumber(bagName:gsub('entity:', ''), 10)
+	if not value then return end
+    local entity = NetworkGetEntityFromNetworkId(net)
+    Wait(1000)
+    if DoesEntityExist(entity) then
+      SetTurbo(entity) -- compatibility with ESX onesync server setter vehicle spawn
+    end
 end)
+
+AddEventHandler('entityCreated', function(entity)
+  local entity = entity
+  Wait(2000)
+  SetTurbo(entity)
+end)
+
