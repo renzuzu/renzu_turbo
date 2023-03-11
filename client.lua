@@ -3,9 +3,8 @@ local turboboost = {}
 AddStateBagChangeHandler('turbo' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated)
 	Wait(500)
 	if not value then return end
-    local net = tonumber(bagName:gsub('entity:', ''), 10)
-    local vehicle = NetworkGetEntityFromNetworkId(net)
-	if DoesEntityExist(vehicle) then
+    local vehicle = GetEntityFromStateBagName(bagName)
+	if DoesEntityExist(vehicle) and value.turbo then
 		local ent = Entity(vehicle).state
 		local plate = GetVehicleNumberPlateText(vehicle)
 		customturbo[plate] = value
@@ -96,13 +95,15 @@ StartTurboLoop = function(plate,vehicle)
 						SetVehicleBoostActive(vehicle,1,0)
 					end
 					sound = false
-					local table = {
-						['file'] = customturbo[plate].turbo,
-						['volume'] = maxvol * (boost / maxtorque),
-						['coord'] = GetEntityCoords(PlayerPedId())
+					local data = {
+						file = customturbo[plate].turbo,
+						volume = maxvol * (boost / maxtorque),
+						coord = GetEntityCoords(PlayerPedId()),
+						boost = exportboost
 					}
 					if GetVehicleTurboPressure(vehicle)+0.1 >= maxtorque and cd >= 1000 then
-						TriggerServerEvent('renzu_turbo:soundsync',table,NetworkGetNetworkIdFromEntity(vehicle),exportboost)
+						ent:set('bov', data, true)
+						--TriggerServerEvent('renzu_turbo:soundsync',table,NetworkGetNetworkIdFromEntity(vehicle),exportboost)
 						cd = 0
 					end
 					boost = 0
@@ -114,13 +115,16 @@ StartTurboLoop = function(plate,vehicle)
 				StopSound(soundofnitro)
 				ReleaseSoundId(soundofnitro)
 				sound = false
-				local table = {
-					['file'] = customturbo[plate].turbo,
-					['volume'] = maxvol * (boost / maxtorque),
-					['coord'] = GetEntityCoords(PlayerPedId())
+				local data = {
+					file = customturbo[plate].turbo,
+					volume = maxvol * (boost / maxtorque),
+					coord = GetEntityCoords(PlayerPedId()),
+					boost = exportboost,
+					ts = math.random(1,99)
 				}
 				if GetVehicleTurboPressure(vehicle)+0.1 >= maxtorque and cd >= 1000 then
-					TriggerServerEvent('renzu_turbo:soundsync',table,NetworkGetNetworkIdFromEntity(vehicle),exportboost)
+					ent:set('bov', data, true)
+					--TriggerServerEvent('renzu_turbo:soundsync',table,NetworkGetNetworkIdFromEntity(vehicle),exportboost)
 					cd = 0
 				end
 				boost = 0
@@ -147,21 +151,26 @@ StartTurboLoop = function(plate,vehicle)
 	end
 end
 
-RegisterNetEvent('renzu_turbo:soundsync')
-AddEventHandler('renzu_turbo:soundsync', function(table)
-    local volume = table['volume']
-	local mycoord = GetEntityCoords(PlayerPedId())
-	local distIs  = tonumber(string.format("%.1f", #(mycoord - table['coord'])))
-	if (distIs <= 30) then
-		distPerc = distIs / 30
-		volume = (1-distPerc) * table['volume']
-		local table = {
-			['file'] = table['file'],
-			['volume'] = volume
-		}
-		SendNUIMessage({
-			type = "playsound",
-			content = table
-		})
+AddStateBagChangeHandler('bov' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated)
+	Wait(0)
+	if not value then return end
+	if replicated then return end
+	local entity = GetEntityFromStateBagName(bagName)
+	if DoesEntityExist(entity) then
+		local volume = value.volume
+		local mycoord = GetEntityCoords(PlayerPedId())
+		local distIs  = tonumber(string.format("%.1f", #(mycoord - value['coord'])))
+		if (distIs <= 30) then
+			distPerc = distIs / 30
+			volume = (1-distPerc) * value.volume
+			local data = {
+				file = value['file'],
+				volume = volume
+			}
+			SendNUIMessage({
+				type = "playsound",
+				content = data
+			})
+		end
 	end
 end)

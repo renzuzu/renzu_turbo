@@ -122,20 +122,25 @@ Citizen.CreateThread(function()
        print(" TURBO LOADED ")
 end)
 
-RegisterNetEvent('renzu_turbo:soundsync')
-AddEventHandler('renzu_turbo:soundsync', function(table,net,exportboost)
-              local vehicle = NetworkGetEntityFromNetworkId(net)
-              local ent = Entity(vehicle).state
-              local plate = GetVehicleNumberPlateText(vehicle)
+AddStateBagChangeHandler('bov' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated)
+	Wait(0)
+       local net = tonumber(bagName:gsub('entity:', ''), 10)
+       if not value then return end
+       local entity = NetworkGetEntityFromNetworkId(net)
+       if DoesEntityExist(entity) then
+              local ent = Entity(entity).state
+              local plate = GetVehicleNumberPlateText(entity)
               local state = ent.turbo
               if not state.durability then
                      state.durability = 100.0
               end
               print(state,state.durability)
-              state.durability -= (0.05) * exportboost
+              state.durability -= (0.05) * value.boost
               ent:set('turbo',state,true)
               turbos[plate].durability = state.durability
-              TriggerClientEvent('renzu_turbo:soundsync',-1,table)
+              Wait(0)
+              ent:set('bov',false,true)
+       end
 end)
 
 SetTurbo = function(entity)
