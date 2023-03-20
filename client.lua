@@ -65,8 +65,10 @@ StartTurboLoop = function(plate,vehicle)
 		local maxtorque = turbo.Torque
 		while customturbo[plate] ~= nil and customturbo[plate].turbo ~= 'Default' and IsPedInAnyVehicle(PlayerPedId()) do
 			local durability = (ent.turbo?.durability or 100.0) / 100
+			local throttle = GetControlNormal(0,71)
 			turbo = Config.turbos[customturbo[plate].turbo]
-			while IsControlPressed(0, 32) do
+			while GetControlNormal(0,71) > 0.1 do
+				local throttle = GetControlNormal(0,71)
 				rpm = GetVehicleCurrentRpm(vehicle)
 				if boost <= maxtorque and turbo.rpmboost <= rpm then
 					local powercurve = (turbo.Power * (1 + (rpm*2)))
@@ -80,7 +82,7 @@ StartTurboLoop = function(plate,vehicle)
 					if ent.nitroenable then
 						power = power + ent.nitropower
 					end
-					SetVehicleCheatPowerIncrease(vehicle,power < 1.0 and 1.0 or power)
+					SetVehicleCheatPowerIncrease(vehicle,(power < 1.0 and 1.0 or power) * GetControlNormal(0,71))
 				end
 				if not sound then
 					StopSound(soundofnitro)
@@ -88,7 +90,7 @@ StartTurboLoop = function(plate,vehicle)
 					soundofnitro = PlaySoundFromEntity(GetSoundId(), "Flare", vehicle , "DLC_HEISTS_BIOLAB_FINALE_SOUNDS", 0, 0)
 					sound = true
 				end
-				if sound and not IsControlPressed(1, 32) or IsControlPressed(1, 32) and rpm > 0.8 and oldgear ~= gear then
+				if sound and throttle < 0.1 or throttle > 0.1 and rpm > 0.8 and oldgear ~= gear then
 					StopSound(soundofnitro)
 					ReleaseSoundId(soundofnitro)
 					if customturbo[plate].turbo == 'Ultimate' then
@@ -111,7 +113,7 @@ StartTurboLoop = function(plate,vehicle)
 				end
 				Wait(0)
 			end
-			if sound and not IsControlPressed(1, 32) or IsControlPressed(1, 32) and rpm > 0.8 and oldgear ~= gear then
+			if sound and throttle < 0.1 or throttle > 0.1 and rpm > 0.8 and oldgear ~= gear then
 				StopSound(soundofnitro)
 				ReleaseSoundId(soundofnitro)
 				sound = false
