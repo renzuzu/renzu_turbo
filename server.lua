@@ -130,14 +130,15 @@ AddStateBagChangeHandler('bov' --[[key filter]], nil --[[bag filter]], function(
        if DoesEntityExist(entity) then
               local ent = Entity(entity).state
               local plate = GetVehicleNumberPlateText(entity)
-              local state = ent.turbo
+              local state = ent.turbo or {}
               if not state.durability then
                      state.durability = 100.0
               end
-              print(state,state.durability)
               state.durability -= (0.05) * value.boost
-              ent:set('turbo',state,true)
-              turbos[plate].durability = state.durability
+              if state then
+                     ent:set('turbo',state,true)
+                     turbos[plate].durability = state.durability
+              end
               Wait(0)
               ent:set('bov',false,true)
        end
