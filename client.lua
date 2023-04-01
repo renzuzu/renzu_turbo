@@ -78,7 +78,19 @@ StartTurboLoop = function(plate,vehicle)
 		local ent = Entity(vehicle).state
 		local maxtorque = turbo.Torque
 		local lastorque = 0
-		while customturbo[plate] ~= nil and customturbo[plate].turbo ~= 'Default' and IsPedInAnyVehicle(PlayerPedId()) do
+		local torque = 0
+		local ped = PlayerPedId()
+		Citizen.CreateThreadNow(function()
+			while IsPedInAnyVehicle(ped) do
+				SendNUIMessage({
+					type = "turbo",
+					max = maxtorque * exportboost,
+					boost = torque * exportboost
+				})
+				Wait(25)
+			end
+		end)
+		while customturbo[plate] ~= nil and customturbo[plate].turbo ~= 'Default' and IsPedInAnyVehicle(ped) do
 			local durability = (ent.turbo?.durability or 100.0) / 100
 			local throttle = GetControlNormal(0,71)
 			turbo = Config.turbos[customturbo[plate].turbo]
@@ -90,6 +102,7 @@ StartTurboLoop = function(plate,vehicle)
 				max = maxtorque,
 				boost = 0.0
 			})
+			torque = 0
 			while GetControlNormal(0,71) > 0.1 do
 				local throttle = GetControlNormal(0,71)
 				rpm = GetVehicleCurrentRpm(vehicle)
@@ -109,13 +122,9 @@ StartTurboLoop = function(plate,vehicle)
 				if ent.nitroenable then
 					power = power + ent.nitropower
 				end
-				local torque = boost
+				torque = boost
 
-				SendNUIMessage({
-					type = "turbo",
-					max = maxtorque * exportboost,
-					boost = torque * exportboost
-				})
+				
 				SetVehicleCheatPowerIncrease(vehicle,(power < 1.0 and 1.0 or power) * GetControlNormal(0,71))
 				if not sound then
 					StopSound(soundofnitro)
@@ -145,9 +154,9 @@ StartTurboLoop = function(plate,vehicle)
 					switchgear = false
 					cd = 0
 					boost = 0
-					Wait(10)
+					Wait(101)
 				end
-				Wait(11)
+				Wait(5)
 			end
 			if (lastorque / maxtorque) > 0.1 and GetControlNormal(0,71) < 0.5 then
 				StopSound(soundofnitro)
@@ -163,6 +172,7 @@ StartTurboLoop = function(plate,vehicle)
 				if GetVehicleTurboPressure(vehicle)+0.1 >= maxtorque and cd >= 1000 then
 					ent:set('bov', data, true)
 					cd = 0
+					torque = 0
 					SendNUIMessage({
 						type = "turbo",
 						max = maxtorque,
