@@ -5,8 +5,107 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Renzu Turbo</title>
-    <script src="script.js"></script>
+    <style>
+      .racing-container {
+        transition: opacity 3s ease;
+        opacity: 0.0;
+        position: absolute;
+        bottom: 30%;
+        right: 1%;
+      }
+      .racing-container .gauge-container {
+        height: 100px;
+        width: 100px;
+        display: inline-block;
+        position: relative;
+        background: #0c0c0c4a;
+        border-radius: 50%;
+        box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.3);
+        margin: 0 5px;
+      }
+      .racing-container .gauge-container a {
+        position: absolute;
+        width: 100px;
+        color: #fdfdfd;
+        text-decoration: none;
+        border-bottom: none;
+        bottom: 35px;
+        right: 0;
+        text-align: center;
+        font-weight: 900;
+        font-size: 12px;
+      }
+      .racing-container .gauge-container a:hover {
+        text-decoration: underline;
+      }
+      .racing-container svg {
+        height: 100px;
+        transform: rotate(-90deg);
+        width: 100px;
+      }
+      .racing-container svg .racing-progress-background {
+        fill: none;
+        stroke: #4a4a4a ;
+        stroke-width: 2;
+      }
+      .racing-container svg .racing-progress {
+        fill: none;
+        stroke: #3778e5;
+        stroke-dasharray: 100 100;
+        stroke-dashoffset: 100;
+        stroke-linecap: square;
+        stroke-width: 2;
+        transition: all 0.1s cubic-bezier(0.99, 0.01, 0.62, 0.94);
+      }
+      .racing-container svg .under-50 {
+        stroke: #3778e5;
+      }
+      .racing-container svg .under-75 {
+        stroke: #FFE100;
+      }
+      .racing-container svg .over-75 {
+        stroke: #81CE97;
+      }
+      .racing-container #gauge-score {
+        position: absolute;
+        width: 100px;
+        color: white;
+        bottom: 14px;
+        font-size: 17px;
+        text-align: center;
+      }
+      .racing-container .walk-icon .fa {
+        position: absolute;
+        bottom: 50px;
+        right: 0;
+        width: 100px;
+        text-align: center;
+        font-size: 40px;
+      }
+    </style>
   </head>
   <body>
+    <div class="racing-container">
+      <div class="gauge-container">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 34 34">
+          <circle cx="16" cy="16" r="15.9155" class="racing-progress-background" />
+          <circle cx="16" cy="16" r="15.9155" class="racing-progress js-racing-progress" />
+        </svg>
+        <div class="gauge-icon">
+          <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" style="position: absolute;top: 15px;height: 30px;">
+            <title>586141</title>
+            <defs>
+              <image  width="512" height="432" id="img1" href="data:image/png;base64,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"/>
+            </defs>
+            <style>
+            </style>
+            <use id="Background" href="#img1" x="0" y="40"/>
+          </svg>
+        </div>
+        <div class="gauge-text"><a href="#">BOOST</a></div>
+        <div id="gauge-score">0.0</div>
+      </div>
+    </div>
+    <script src="script.js"></script>
   </body>
 </html>

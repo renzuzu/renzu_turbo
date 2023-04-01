@@ -8,7 +8,6 @@ AddStateBagChangeHandler('turbo' --[[key filter]], nil --[[bag filter]], functio
 		local ent = Entity(vehicle).state
 		local plate = GetVehicleNumberPlateText(vehicle)
 		customturbo[plate] = value
-		print('turbo', value.turbo, customturbo[plate])
 		local weightadded = Config.turbos[value.turbo].weight
 		local weight = GetVehicleHandlingInt(vehicle,'CHandlingData', 'fMass')
 		if turboboost[plate] ~= value.turbo then
@@ -26,7 +25,6 @@ AddEventHandler('gameEventTriggered', function (name, args)
 	if name == 'CEventNetworkPlayerEnteredVehicle' then
 		if args[1] == PlayerId() then
 			local plate = GetVehicleNumberPlateText(args[2])
-			print(customturbo[plate])
 			if customturbo[plate] and DoesEntityExist(args[2]) then
 				Wait(3000)
 				StartTurboLoop(plate,args[2])
@@ -40,11 +38,27 @@ exports('BoostPerGear', function(percent)
 	exportboost = percent
 end)
 
+local manualgear = false
+local switchgear = false
+AddStateBagChangeHandler('gearshift' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated) -- sync gear shifting and other vehicle stats
+    Wait(0)
+    if not value then return end
+    local vehicle = GetEntityFromStateBagName(bagName)
+	if not DoesEntityExist(vehicle) then return end
+	if DoesEntityExist(vehicle) and GetPedInVehicleSeat(vehicle,-1) == PlayerPedId() then
+		switchgear = true
+		manualgear = value.gear
+	end
+end)
+
 local boosted = false
 StartTurboLoop = function(plate,vehicle)
 	if boosted then return end
 	if invehicle then return end
 	local vehicle = vehicle
+	SendNUIMessage({
+		show = true
+	})
 	if customturbo[plate] then
 		boosted = true
 		print("Turbo Loop")
@@ -59,61 +73,83 @@ StartTurboLoop = function(plate,vehicle)
 		local oldgear = 1
 		local cd = 0
 		local rpm = GetVehicleCurrentRpm(vehicle)
-		local gear = GetVehicleCurrentGear(vehicle)
+		gear = GetVehicleCurrentGear(vehicle)
 		local maxvol = 0.4
 		local ent = Entity(vehicle).state
 		local maxtorque = turbo.Torque
+		local lastorque = 0
 		while customturbo[plate] ~= nil and customturbo[plate].turbo ~= 'Default' and IsPedInAnyVehicle(PlayerPedId()) do
 			local durability = (ent.turbo?.durability or 100.0) / 100
 			local throttle = GetControlNormal(0,71)
 			turbo = Config.turbos[customturbo[plate].turbo]
+			boost = 0
+			rpm = GetVehicleCurrentRpm(vehicle)
+			local powercurve = (turbo.Power * (1 + (rpm*2)))
+			SendNUIMessage({
+				type = "turbo",
+				max = maxtorque,
+				boost = 0.0
+			})
 			while GetControlNormal(0,71) > 0.1 do
 				local throttle = GetControlNormal(0,71)
 				rpm = GetVehicleCurrentRpm(vehicle)
 				if boost <= maxtorque and turbo.rpmboost <= rpm then
-					local powercurve = (turbo.Power * (1 + (rpm*2)))
-					boost = maxtorque < boost and (boost + powercurve) or maxtorque
+					local powercurve = (turbo.Power * (rpm / turbo.lag))
+					boost = maxtorque >= boost and (boost + powercurve) or maxtorque
+				elseif turbo.rpmboost >= rpm then
+					local powercurve = (turbo.Power * (rpm / (turbo.lag * 10)))
+					boost = maxtorque > boost and (boost + powercurve) or maxtorque
 				end
+
 				cd = cd + 10
-				gear = GetVehicleCurrentGear(vehicle)
+				gear = manualgear or GetVehicleCurrentGear(vehicle)
+
 				SetVehicleTurboPressure(vehicle , boost)
-				if GetVehicleTurboPressure(vehicle)+0.1 >= maxtorque then
-					local power = (GetVehicleTurboPressure(vehicle) * (rpm < 0.8 and 0.5+rpm or rpm+0.2) * exportboost) * durability
-					if ent.nitroenable then
-						power = power + ent.nitropower
-					end
-					SetVehicleCheatPowerIncrease(vehicle,(power < 1.0 and 1.0 or power) * GetControlNormal(0,71))
+				local power = (GetVehicleTurboPressure(vehicle) * (rpm < 0.8 and 0.5+rpm or rpm+0.2) * exportboost) * durability
+				if ent.nitroenable then
+					power = power + ent.nitropower
 				end
+				local torque = boost
+
+				SendNUIMessage({
+					type = "turbo",
+					max = maxtorque * exportboost,
+					boost = torque * exportboost
+				})
+				SetVehicleCheatPowerIncrease(vehicle,(power < 1.0 and 1.0 or power) * GetControlNormal(0,71))
 				if not sound then
 					StopSound(soundofnitro)
 					ReleaseSoundId(soundofnitro)
 					soundofnitro = PlaySoundFromEntity(GetSoundId(), "Flare", vehicle , "DLC_HEISTS_BIOLAB_FINALE_SOUNDS", 0, 0)
 					sound = true
 				end
-				if sound and throttle < 0.1 or throttle > 0.1 and rpm > 0.8 and oldgear ~= gear then
+
+				if (torque / maxtorque) > 0.1 and GetControlNormal(0,71) < 0.5 or (torque / maxtorque) > 0.2 and gear ~= oldgear then
 					StopSound(soundofnitro)
 					ReleaseSoundId(soundofnitro)
 					if customturbo[plate].turbo == 'Ultimate' then
 						SetVehicleBoostActive(vehicle,1,0)
 					end
 					sound = false
+					if oldgear ~= gear then
+						oldgear = gear
+						lastorque = torque
+					end
 					local data = {
 						file = customturbo[plate].turbo,
-						volume = maxvol * (boost / maxtorque),
+						volume = maxvol * (torque / maxtorque),
 						coord = GetEntityCoords(PlayerPedId()),
 						boost = exportboost
 					}
-					if GetVehicleTurboPressure(vehicle)+0.1 >= maxtorque and cd >= 1000 then
-						ent:set('bov', data, true)
-						--TriggerServerEvent('renzu_turbo:soundsync',table,NetworkGetNetworkIdFromEntity(vehicle),exportboost)
-						cd = 0
-					end
+					ent:set('bov', data, true)
+					switchgear = false
+					cd = 0
 					boost = 0
-					oldgear = gear
+					Wait(10)
 				end
-				Wait(0)
+				Wait(11)
 			end
-			if sound and throttle < 0.1 or throttle > 0.1 and rpm > 0.8 and oldgear ~= gear then
+			if (lastorque / maxtorque) > 0.1 and GetControlNormal(0,71) < 0.5 then
 				StopSound(soundofnitro)
 				ReleaseSoundId(soundofnitro)
 				sound = false
@@ -126,8 +162,12 @@ StartTurboLoop = function(plate,vehicle)
 				}
 				if GetVehicleTurboPressure(vehicle)+0.1 >= maxtorque and cd >= 1000 then
 					ent:set('bov', data, true)
-					--TriggerServerEvent('renzu_turbo:soundsync',table,NetworkGetNetworkIdFromEntity(vehicle),exportboost)
 					cd = 0
+					SendNUIMessage({
+						type = "turbo",
+						max = maxtorque,
+						boost = 0.0
+					})
 				end
 				boost = 0
 				oldgear = gear
@@ -142,11 +182,14 @@ StartTurboLoop = function(plate,vehicle)
 				break
 			end
 			Wait(500)
-			Wait(7)
 			customized = true
 		end
 		invehicle = false
 		boosted = false
+		manualgear = false
+		SendNUIMessage({
+			show = false
+		})
 		if customized then
 			Wait(1000)
 		end
