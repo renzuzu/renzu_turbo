@@ -25,7 +25,7 @@ AddEventHandler('gameEventTriggered', function (name, args)
 	if name == 'CEventNetworkPlayerEnteredVehicle' then
 		if args[1] == PlayerId() then
 			local plate = GetVehicleNumberPlateText(args[2])
-			if customturbo[plate] and DoesEntityExist(args[2]) then
+			if customturbo[plate] and DoesEntityExist(args[2]) and GetPedInVehicleSeat(args[2],-1) == PlayerPedId() then
 				Wait(3000)
 				StartTurboLoop(plate,args[2])
 			end
